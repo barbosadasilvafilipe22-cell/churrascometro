@@ -1,1 +1,46 @@
 
+name:Build iOS
+
+on:
+workflow_dispatch
+
+jobs:
+     Build:
+       runs-on: macos-latest
+       steps:
+       -name:checkout
+        uses:actions/checout@v4
+
+       -name: Configurar Node
+        uses: action/setup-node@v4
+        with:
+          node-version:20
+          cache:npm
+          
+       -name:Instalar dependências
+        run: npm install
+
+      -name: Gerar Prebuild
+       run: npx expo prebuild --plataform ios --clean
+
+      -name: Instalar CocoaPods
+       run: | 
+         cd ios
+         pod install 
+
+      -name: Compilar no XCode
+       run:|       
+         cd ios
+         xcodebuild -workspace churascometro.xcworkspace --scheme churrascometro -configuration Realease -derivedDatapatch build CODE_SIGNING_ALLOWED=NO CODE_SIGNIG_REQUIRED=NO
+
+      -name: Empacotar
+       run: |  
+         mkdir -p Aplicacao
+         mv ios/build/Build/Products/Release-iphoneos/churascometro.app Aplicacao/
+         zip -r app.ipa Aplicacao
+
+     -name: Upload
+      uses: actions/upload-artifact@v4]
+      with: 
+       name: app
+       path: app.ipa
