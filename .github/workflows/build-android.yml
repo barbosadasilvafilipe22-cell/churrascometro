@@ -1,0 +1,50 @@
+
+name: Build Android AAB
+
+on:
+  workflow_dispatch:
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Gerar Prebuild
+        run: npx expo prebuild --platform android --clean
+
+      - name: Configurar permissões Gradle
+        run: chmod +x android/gradlew
+
+      - name: Compilar AAB
+        run: |
+          cd android
+          ./gradlew bundleRelease
+
+      - name: Preparar arquivo AAB
+        run: |
+          mkdir -p Aplicacao
+          cp android/app/build/outputs/bundle/release/app-release.aab Aplicacao/
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-android-aab
+          path: Aplicacao/app-release.aab
